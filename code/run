@@ -1,0 +1,14 @@
+#!/bin/bash
+set -euo pipefail
+
+# Ensure output directory exists and wire up the relative "figs/" path used
+# by figure scripts to the Code Ocean /results mount (or local equivalent).
+mkdir -p /results
+rm -rf /code/figs
+ln -sf /results /code/figs
+
+cd /code
+pixi run python -c "
+import abstemp.figure_scripts as figs
+figs.generate_figures()
+"

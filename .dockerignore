@@ -1,9 +1,16 @@
-# Large data files — mounted at run time, not baked into the image
-src/abstemp/data/*.nc
-src/abstemp/data/cmip6/
+# Large NetCDF files — provided via /data mount at runtime, not baked into image
+code/src/abstemp/data/*.nc
+code/src/abstemp/data/cmip6/
+code/src/abstemp/data/maxmonsst_cmip6/
 
 # Outputs
 figs/
+results/
+
+# Pixi environment (rebuilt inside image via pixi install)
+code/.pixi/
+
+# Build artefacts
 **/__pycache__/
 **/*.pyc
 **/*.pyo
@@ -11,4 +18,3 @@ figs/
 # Dev artefacts
 .git/
 *.egg-info/
-.pixi/

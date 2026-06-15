@@ -1,4 +1,5 @@
 
+import os
 import pathlib
 
 import xarray as xr
@@ -8,6 +9,17 @@ from abstemp import warmest_month
 from abstemp.tempvel import generate_regdegvel_df
 from abstemp.seagrid import cmip6
 from . import download
+
+
+def _nc_dir() -> pathlib.Path:
+    """Return the directory that holds large NetCDF files.
+
+    Respects the ``ABSTEMP_DATA_DIR`` environment variable so the same code
+    works both inside a Code Ocean capsule (``/data``) and in a local
+    development environment (package data directory).
+    """
+    env = os.environ.get("ABSTEMP_DATA_DIR")
+    return pathlib.Path(env) if env else pathlib.Path(__file__).parent
 
 def max_min_month(ds):
     """Compute per-pixel maximum and minimum monthly SST statistics.
@@ -116,7 +128,7 @@ def open_ostia_1985() -> xr.Dataset:
     xarray.Dataset
         Monthly SST fields with ``time``, ``lat``, ``lon`` dimensions.
     """
-    return xr.open_dataset(pathlib.Path(__file__).parent / "ostia_sst_1985-1990.nc")
+    return xr.open_dataset(_nc_dir() / "ostia_sst_1985-1990.nc")
 
 def open_ostia_2019() -> xr.Dataset:
     """Open the raw monthly OSTIA NRT SST dataset for 2019–2023.
@@ -126,7 +138,7 @@ def open_ostia_2019() -> xr.Dataset:
     xarray.Dataset
         Monthly SST fields with ``time``, ``lat``, ``lon`` dimensions.
     """
-    return xr.open_dataset(pathlib.Path(__file__).parent / "ostia_sst_2019-2023.nc")
+    return xr.open_dataset(_nc_dir() / "ostia_sst_2019-2023.nc")
 
 def open_cmip6_2095(model="ecearth") -> xr.Dataset:
     """Open the raw monthly CMIP6 SST dataset for 2095–2100.
@@ -142,7 +154,7 @@ def open_cmip6_2095(model="ecearth") -> xr.Dataset:
     xarray.Dataset
         Monthly SST fields with ``time``, ``lat``, ``lon`` dimensions.
     """
-    return xr.open_dataset(pathlib.Path(__file__).parent / f"{model}_sst_2095-2100.nc")
+    return xr.open_dataset(_nc_dir() / f"{model}_sst_2095-2100.nc")
 
 
 def open_warmest_1985() -> xr.Dataset:
@@ -154,7 +166,7 @@ def open_warmest_1985() -> xr.Dataset:
         Per-pixel SST statistics on a ``lat``/``lon`` grid; see
         :func:`max_min_month` for variable descriptions.
     """
-    return xr.open_dataset(pathlib.Path(__file__).parent / "ostia_maxmonsst_1985-1990.nc")
+    return xr.open_dataset(_nc_dir() / "ostia_maxmonsst_1985-1990.nc")
 
 def open_warmest_2019() -> xr.Dataset:
     """Open the pre-computed OSTIA NRT max-month SST statistics for 2019–2023.
@@ -165,7 +177,7 @@ def open_warmest_2019() -> xr.Dataset:
         Per-pixel SST statistics on a ``lat``/``lon`` grid; see
         :func:`max_min_month` for variable descriptions.
     """
-    return xr.open_dataset(pathlib.Path(__file__).parent / "ostia_maxmonsst_2019-2023.nc")
+    return xr.open_dataset(_nc_dir() / "ostia_maxmonsst_2019-2023.nc")
 
 def open_warmest_2095(model="cnrm_cm6_1_hr", experiment="ssp5_8_5") -> xr.Dataset:
     """Open pre-computed CMIP6 max-month SST statistics for 2095–2100.
@@ -185,7 +197,7 @@ def open_warmest_2095(model="cnrm_cm6_1_hr", experiment="ssp5_8_5") -> xr.Datase
         Greenwich meridian; see :func:`max_min_month` for variable
         descriptions.
     """
-    datadir = pathlib.Path(__file__).parent / "maxmonsst_cmip6"
+    datadir = _nc_dir() / "maxmonsst_cmip6"
     fn = f"{model}_{experiment}_maxmonsst.nc"
     return cmip6.center_on_gmt(xr.open_dataset(datadir / fn))
 
@@ -198,7 +210,7 @@ def open_longhurst() -> xr.Dataset:
         Dataset on a regular lat/lon grid with variables ``basins``,
         ``regions``, and ``biomes``.
     """
-    return xr.open_dataset(pathlib.Path(__file__).parent / "Longhurst_Regions_2007.nc")
+    return xr.open_dataset(_nc_dir() / "Longhurst_Regions_2007.nc")
 
 
 def all() -> None:

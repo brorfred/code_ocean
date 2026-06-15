@@ -16,6 +16,7 @@ import cmap
 import projmap
 
 import abstemp
+from abstemp import vector_figs
 from abstemp import (
     data,
     warmest_month,
@@ -181,7 +182,8 @@ def warmest_months():
     for i, (year, cb) in enumerate([(1985, None), (2019, None), (2095, True)]):
         ds = getattr(data, f"open_warmest_{year}")()
         warmest_map_pcolor(ds, mp, i, colorbar=cb, title=f"{year}$-${year+5}")
-    plt.savefig("figs/warmest_sst_map.pdf", dpi=600, bbox_inches="tight")
+    if vector_figs:
+        plt.savefig("figs/warmest_sst_map.pdf", dpi=600, bbox_inches="tight")
     plt.savefig("figs/warmest_sst_map.png", dpi=600, bbox_inches="tight")
 
 

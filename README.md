@@ -1,262 +1,200 @@
-# abstemp
+# Absolute Temperature — Reproducible Code Capsule
 
-**Absolute Temperature** — analysis of how warming sea-surface temperatures affect
-biological accessibility of cooler ocean regions.
-
-The package quantifies *temperature velocity*: the time (in years) it takes for ocean
-currents to carry water from a given region to the nearest region that is currently
-≥1 °C warmer.  This is computed for three climate periods using ~11 000 global ocean
-regions derived from the ECCO particle-tracking model:
-
-| Period | Dataset |
-|--------|---------|
-| 1985–1990 | OSTIA reanalysis |
-| 2019–2023 | OSTIA NRT product |
-| 2095–2100 | CNRM-CM6-1-HR SSP5-8.5 |
+This capsule reproduces all manuscript figures for the study on how rising
+sea-surface temperatures affect the biological accessibility of cooler ocean
+regions via ocean connectivity.
 
 ---
 
-## Reproducing figures with Docker / Podman (recommended)
+## Reproducing the figures
 
-The fastest way to reproduce all manuscript figures is to run the pre-built
-container.  No local Python environment is needed — only
-[Docker](https://docs.docker.com/get-started/get-docker/) or
-[Podman](https://podman.io/docs/installation).
+Click **Reproducible Run** at the top of this capsule.  All six manuscript
+figures will be written to the **Results** panel (usually within 10–15
+minutes).  No configuration is required.
 
-### Build
+The run script (`code/run`) executes the following steps automatically:
 
-```bash
-podman build -t abstemp .
+1. Wires the output directory so figures land in `/results`.
+2. Calls `abstemp.figure_scripts.generate_figures()`, which runs each figure
+   generator in sequence and prints a pass/fail summary.
+
+---
+
+## What each figure shows
+
+| Result file | Figure | Description |
+|-------------|--------|-------------|
+| `warmest_sst_map.png` | Fig. 2 | Three-panel global map of the warmest monthly SST for 1985–1990, 2019–2023, and 2095–2100 (CNRM-CM6-1-HR SSP5-8.5). Colours show SST thresholds at 25, 30–37 °C. |
+| `sst_hist_1985_2019_2095.pdf` | Fig. 3 | Area-weighted histograms of peak monthly SST for three climate periods. The red envelope shows the full CMIP6 SSP5-8.5 model spread; the red line is the ensemble mean. |
+| `growth_models.pdf` | Fig. 4 | Phytoplankton growth rate vs. temperature for two parametric models (Norberg–Eppley and Blackford), overlaid on the observed growth-rate compilation. |
+| `regdegvel_maps.png` | Fig. 5 | Three-panel global map of regional temperature velocity (years to travel 1 °C warmer) for 1985–1990, 2019–2023, and 2095–2100. |
+| `ostia_sst.png` | Fig. 6 | Three-panel map of the warmest month, coldest month, and seasonal SST range from the OSTIA 2019–2023 product. |
+| `regdegvel_hist.pdf` | Fig. 7 | Area-weighted histogram of the time (years) required to travel 1–4 °C warmer, computed for 2019 SST values across ~11 000 ocean regions. |
+
+---
+
+## Scientific background
+
+The analysis centres on *absolute temperature velocity*: given the current
+(or projected) sea-surface temperature field, how many years does it take for
+ocean currents to carry a water parcel from a given region to the nearest
+region that is already ≥Δ°C warmer?  This is distinct from the classic
+*climate velocity* metric (which tracks how fast isotherms move across the
+surface) because it uses the connectivity encoded in ocean particle-tracking
+rather than spatial SST gradients.
+
+**Ocean regions** (~11 000 globally) are derived from the ECCO Lagrangian
+particle-tracking model and stored in `mintmat_2001-2009.nc`.  The file
+contains the Dijkstra-shortest-path minimum travel time between every pair of
+regions (`dijkmintmat`, units: days), which is the core input to the
+degree-velocity calculation.
+
+**Temperature velocity** for each region is computed by
+`abstemp.tempvel.movedegree()`: find the closest (by travel time) region
+whose peak monthly SST exceeds the source region's SST by Δ°C, then divide
+the travel time by 365 to convert to years.
+
+**Three climate periods** are compared:
+
+| Period | SST source |
+|--------|-----------|
+| 1985–1990 | OSTIA reanalysis (`ostia_maxmonsst_1985-1990.nc`) |
+| 2019–2023 | OSTIA NRT product (`ostia_maxmonsst_2019-2023.nc`) |
+| 2095–2100 | CNRM-CM6-1-HR SSP5-8.5 (`maxmonsst_cmip6/cnrm_cm6_1_hr_ssp5_8_5_maxmonsst.nc`) |
+
+For the SST histogram comparison (Fig. 3), 24 CMIP6 models under both
+SSP5-8.5 and SSP2-4.5 are included; the pre-computed histograms are stored as
+CSV files in the repository.
+
+**Phytoplankton growth models** (Fig. 4) are fully parametric and require no
+input data — they implement the Norberg–Eppley and Blackford equations and
+overlay the observed growth-rate compilation from `growth_rates.csv`.
+
+---
+
+## Data assets
+
+All input data are in the **Data** panel of this capsule (mounted read-only at
+`/data` during the run).
+
+| File | Size | Used for |
+|------|------|---------|
+| `ostia_maxmonsst_1985-1990.nc` | 1.2 GB | Fig. 2, Fig. 5 |
+| `ostia_maxmonsst_2019-2023.nc` | 1.2 GB | Fig. 2, Fig. 5, Fig. 6 |
+| `maxmonsst_cmip6/cnrm_cm6_1_hr_ssp5_8_5_maxmonsst.nc` | 81 MB | Fig. 2, Fig. 5 |
+| `maxmonsst_cmip6/cnrm_cm6_1_hr_ssp2_4_5_maxmonsst.nc` | 81 MB | (SSP2-4.5 variant) |
+| `mintmat_2001-2009.nc` | ~1 GB | Fig. 5 (region grid mapping) |
+| `Longhurst_Regions_2007.nc` | 14 MB | Longhurst province overlays |
+
+The following smaller files are bundled directly in the repository
+(`code/src/abstemp/data/`) and require no separate download:
+
+| File | Used for |
+|------|---------|
+| `abstemp_reg_degvel.parquet` | Fig. 5, Fig. 7 — pre-computed per-region degree-velocity for 1985, 2019, 2095 |
+| `all_cmip6_hists_ssp585.csv` | Fig. 3 — area-weighted SST histograms, 24 CMIP6 models, SSP5-8.5 |
+| `all_cmip6_hists_ssp245.csv` | Fig. 3 — same for SSP2-4.5 |
+| `all_ostia_hists.csv` | Fig. 3 — OSTIA area-weighted histograms for 1985–1990 and 2019–2023 |
+| `growth_rates.csv` | Fig. 4 — observed phytoplankton growth rates vs. temperature |
+
+---
+
+## Capsule layout
+
+```
+code/                        Python source (installed as editable package)
+│
+├── run                      Entrypoint executed by Reproducible Run
+│
+└── src/abstemp/
+    ├── __init__.py          Top-level API; vector_figs flag
+    ├── figure_scripts/      One module per manuscript figure
+    │   ├── __init__.py      generate_figures() — runs all figures, reports pass/fail
+    │   ├── maxmonsst.py     Fig. 2 — warmest-month SST maps
+    │   ├── global_hists.py  Fig. 3 — SST histograms
+    │   ├── growth_models.py Fig. 4 — phytoplankton growth models
+    │   ├── temp_velocities.py Fig. 5, 7 — temperature-velocity maps and histogram
+    │   └── methods.py       Fig. 6 — OSTIA SST diagnostic maps
+    ├── tempvel/             Degree-velocity computation (movedegree, regvel_*)
+    ├── reg_calculations/    Region ↔ grid mapping (regvec_to_arr, arr_to_regvec)
+    ├── data/                Bundled small datasets + open_warmest_* accessors
+    └── seagrid/             SST download interfaces (OSTIA, CMIP6, Copernicus)
+
+data/                        Large NetCDF input files (mounted at /data)
+environment/
+└── Dockerfile               Reproducible environment (pixi + conda-forge)
 ```
 
-Replace `podman` with `docker` if using Docker Engine.  The build downloads
-all dependencies via [pixi](https://pixi.sh) and takes ~5–10 min on the first
-run; subsequent builds reuse the layer cache.
+---
 
-### Run
+## Environment
 
-Mount the data directory (read-only) and an output directory for the figures:
+Dependencies are managed with [pixi](https://pixi.sh) and pinned via
+`code/pixi.lock`.  The full dependency list is in `code/pyproject.toml`.  Key
+packages: `xarray`, `numpy`, `scipy`, `matplotlib`, `cartopy`, `projmap`,
+`pyresample`, `pandas`, `scikit-learn`, `dask`, `netCDF4`.
+
+The environment is built once into the container image (stored outside
+`/code/` so it is not affected when Code Ocean mounts the code directory at
+runtime).  No internet access is required during the run.
+
+---
+
+## Running locally with Docker or Podman
+
+If you want to reproduce figures on your own machine rather than on Code Ocean:
 
 ```bash
+# Clone the repository
+git clone <repo-url>
+cd code_ocean
+
+# Build the image (~5–10 min on first run; subsequent builds use cache)
+podman build -t abstemp -f environment/Dockerfile .
+
+# Run (mount the data directory and an output directory)
+mkdir -p figs
 podman run --rm \
-  -v "$(pwd)/src/abstemp/data:/app/src/abstemp/data" \
-  -v "$(pwd)/figs:/app/figs" \
+  -v "$(pwd)/data:/data:ro" \
+  -v "$(pwd)/figs:/results" \
   abstemp
 ```
 
-All figures are written to `figs/` on the host.  The container uses the
-`Agg` matplotlib backend — no display required.
-
-The container runs `docker/run_figures.py`, which calls each figure function
-in turn and reports pass/fail per figure.
+Replace `podman` with `docker` if using Docker Engine.  Figures are written to
+`figs/` on the host.  No display is required (the `Agg` backend is used).
 
 ---
 
-## Installation (local development)
+## Exploring the analysis interactively
 
-The project uses [pixi](https://pixi.sh) to manage a reproducible conda + PyPI
-environment.  If pixi is not installed, run
-`curl -fsSL https://pixi.sh/install.sh | sh` on macOS/Linux or
-`winget install prefix-dev.pixi` on Windows.
+If you want to step through the analysis rather than just running the full
+figure pipeline, the Python package can be used interactively after installing
+the pixi environment:
 
 ```bash
-pixi install        # install all dependencies
-pixi run python     # launch Python inside the environment
+cd code
+pixi install          # one-time setup
+pixi run python       # launch Python inside the environment
 ```
 
-All dependencies — including `projmap` — are installed automatically from
-PyPI and conda-forge; no extra repositories need to be cloned.
-
----
-
-## Use case 1 — Bundled data
-
-Most analysis files are tracked in git.  After cloning, only four large SST
-NetCDF files need to be downloaded before all figures can be reproduced.
-
-### Files included in git
-
-| File | Size | Description |
-|------|------|-------------|
-| `src/abstemp/data/abstemp_reg_degvel.parquet` | Per-region degree-velocity for 1985, 2019, 2095 |
-| `src/abstemp/data/all_cmip6_hists_ssp585.csv` | CMIP6 SSP5-8.5 area-weighted SST histograms |
-| `src/abstemp/data/all_cmip6_hists_ssp245.csv` | CMIP6 SSP2-4.5 area-weighted SST histograms |
-| `src/abstemp/data/all_ostia_hists.csv` | OSTIA area-weighted SST histograms |
-| `src/abstemp/data/growth_rates.csv` | Observed phytoplankton growth rates vs temperature |
-
-### Files to download after clone
-
 ```python
-from abstemp import data 
-
-data.setup()
-```
-Downloads `mintmat_2001-2009.nc`, `ostia_maxmonsst_1985-1990.nc`, `ostia_maxmonsst_2019-2023.nc`, CNRM-CM6-1-HR max-month files (SSP5-8.5 and SSP2-4.5) into `maxmonsst_cmip6/`, and `Longhurst_Regions_2007.nc`.
-
-
-### Reproduce all figures
-
-```python
+import abstemp
 import abstemp.figure_scripts as figs
 
-figs.warmest_month_maps()   # three-panel SST map → figs/warmest_sst_map.pdf
-figs.global_histograms()    # SST histogram comparison → figs/sst_hist_1985_2019_2095.pdf
-figs.growth_model_plot()    # growth-model curves → figs/growth_models.pdf
-figs.checkerboard()         # 2°×2° grid diagnostic → figs/checkerboard.pdf
-figs.sst_maps()             # max/min/range SST maps → figs/ostia_sst.pdf
-figs.tempvel_maps()        # → figs/regdegvel_maps.pdf
-figs.tempvel_histogram()     # → figs/regdegvel_hist.pdf
+# Load the pre-computed degree-velocity table
+df = abstemp.read_regdegvel()
+print(df.columns.tolist())
+
+# Reproduce individual figures
+figs.global_histograms()     # Fig. 3
+figs.growth_model_plot()     # Fig. 4
+figs.tempvel_histogram()     # Fig. 7
+
+# Explore the connectivity matrix
+ds = abstemp.open_mintmat_ds()
+print(ds)                    # dijkmintmat: travel times in days between ~11 000 regions
 ```
 
-
-#### Figure–data dependency table
-
-| Figure function | Files required | In git? |
-|----------------|---------------|---------|
-| `warmest_month_maps()` | `ostia_maxmonsst_1985-1990.nc`, `ostia_maxmonsst_2019-2023.nc`, `maxmonsst_cmip6/cnrm_cm6_1_hr_ssp5_8_5_maxmonsst.nc` | No — download |
-| `global_histograms()` | `all_cmip6_hists_ssp585.csv`, `all_cmip6_hists_ssp245.csv`, `all_ostia_hists.csv` | Yes |
-| `growth_model_plot()` | none | — |
-| `checkerboard()` | none | — |
-| `sst_maps()` | `mintmat_2001-2009.nc` | Yes |
-| `tempvel_maps()` / `tempvel_histogram()` | `abstemp_reg_degvel.parquet` | Yes |
-
----
-
-## Use case 2 — Full rebuild from external data
-
-This path regenerates every derived file from raw external sources.
-
-### Prerequisites
-
-| Requirement | Notes |
-|-------------|-------|
-| CDS API credentials | `~/.cdsapirc` — register at [cds.climate.copernicus.eu](https://cds.climate.copernicus.eu) |
-| OSTIA archive access | Via `abstemp.seagrid.ostia` (uses Copernicus Marine) |
-
-### Step-by-step
-
-#### 1. Download CMIP6 SST files (24 models × 2 scenarios)
-
-```python
-from abstemp.seagrid import cmip6
-cmip6.retrieve_all_files()   # needs ~/.cdsapirc; saves to src/abstemp/data/cmip6/
-```
-
-This downloads monthly SST for 2090–2100 for all 24 models listed in
-`cmip6.cmip6_sst_models` under both `ssp2_4_5` and `ssp5_8_5`.
-
-#### 2. Download or regenerate OSTIA max-month SST files
-
-Download the pre-computed files from the project server:
-
-```python
-from abstemp.data import download
-download.maxmonsst_fields()   # ecearth_maxmonsst_2095-2100.nc, ostia_maxmonsst_1985-1990.nc, ostia_maxmonsst_2019-2023.nc
-```
-
-To regenerate the OSTIA max-month files directly from the raw archive instead:
-
-```python
-from abstemp.warmest_month import save_ostia_files
-from abstemp.data import generate_ostia_maxmonsst_files, generate_cmip6_maxmonsst_files
-
-save_ostia_files()                   # requires OSTIA access; saves ostia_sst_1985-1990.nc and ostia_sst_2019-2023.nc
-generate_ostia_maxmonsst_files()     # computes ostia_maxmonsst_1985-1990.nc, ostia_maxmonsst_2019-2023.nc
-generate_cmip6_maxmonsst_files()     # computes maxmonsst_cmip6/{model}_{experiment}_maxmonsst.nc for all CMIP6 models
-                                     # (requires CMIP6 NetCDF files from step 1)
-```
-
-#### 3. Generate SST histogram CSVs
-
-```python
-from abstemp.global_sst_histograms import save_cmip_hists, save_ostia_hists
-
-save_cmip_hists()    # reads CMIP6 files from step 1 → all_cmip6_hists_ssp{585,245}.csv
-save_ostia_hists()   # requires OSTIA access → all_ostia_hists.csv
-```
-
-#### 4. Generate the degree-velocity parquet
-
-The mintmat file (already tracked in git, or downloaded via
-`download.mintmat()`) contains the connectivity matrix and all Longhurst
-province assignments needed for this step.
-
-```python
-from abstemp.tempvel import generate_regdegvel_df
-import abstemp, pathlib
-
-df = generate_regdegvel_df()   # requires ostia_maxmonsst_*.nc (step 2) and CMIP6 (2095) access
-datadir = pathlib.Path(abstemp.__file__).parent / "data"
-df.to_parquet(datadir / "abstemp_reg_degvel.parquet")
-```
-
-`generate_regdegvel_df()` calls `regvel_1985`, `regvel_2019`, and `regvel_2095`
-which each run `movedegree()` — the main bottleneck (~11 000 region pairs,
-several hours per time period).
-
-#### 5. Reproduce all figures
-
-Same as Use case 1, or run the Docker container.
-
-### Regenerating the mintmat SST statistics (rarely needed)
-
-The tracked `mintmat_2001-2009.nc` already contains per-region SST statistics
-and Longhurst province codes.  If you need to regenerate them (e.g. after
-updating the OSTIA time range):
-
-```python
-from abstemp.reg_calculations import add_maxmon, add_longhurst
-
-add_maxmon()       # requires OSTIA access; overwrites mintmat in-place
-add_longhurst()    # requires Longhurst_Regions_2007.nc (see below)
-```
-
-`Longhurst_Regions_2007.nc` is not tracked in git; download it first:
-
-```python
-from abstemp.data import download
-download.longhurst_regions()
-```
-
----
-
-## Package layout
-
-```
-src/abstemp/
-├── __init__.py              Top-level API (open_mintmat_ds, read_*, open_longhurst)
-├── warmest_month.py         Load OSTIA SST; save_ostia_files()
-├── global_sst_histograms.py Area-weighted SST histogram computation and saving
-├── degvelmap.py             Interactive Plotly map of degree-velocity
-├── mapview.py               Interactive Plotly map of SST statistics
-│
-├── data/                    Bundled datasets + download utilities
-│   ├── __init__.py          open_warmest_*, open_ostia_*, open_longhurst, max_min_month, generate_maxmonsst_files, all()
-│   └── download.py          mintmat(), maxmonsst_fields(), ostia_sst_fields(), longhurst_regions()
-│
-├── seagrid/                 Grid download/normalisation
-│   ├── ostia.py             OSTIA SST download and access (Copernicus Marine)
-│   ├── cmip6.py             CMIP6 SST files from CDS API
-│   ├── glorys.py            GLORYS12v1 reanalysis from Mercator THREDDS
-│   ├── copernicus.py        Copernicus Marine download interface
-│   ├── config.py            Dynaconf-based settings loader
-│   ├── gridtools.py         Grid-cell spacing and area calculations
-│   └── utils/grids.py       pyresample grid definitions
-│
-├── reg_calculations/        Aggregate gridded SST onto ~11 000 mintmat regions
-│   ├── __init__.py          arr_to_regvec, regvec_to_arr, add_maxmon, add_longhurst
-│   ├── sst_ostia.py         OSTIA pixel → region mapping
-│   ├── sst_cmip6.py         CMIP6 model → region mapping
-│   └── longhurst.py         Longhurst province → region mapping
-│
-├── tempvel/                 Degree-velocity computation
-│   └── __init__.py          generate_regdegvel_df(), movedegree(), regvel_*
-│
-└── figure_scripts/          Manuscript figure generators
-    ├── figpref.py           Matplotlib style presets (manuscript / presentation)
-    ├── global_hists.py      SST histogram comparison figure
-    ├── growth_models.py     Blackford + Norberg-Eppley growth model figures
-    ├── maxmonsst.py         Warmest-month SST maps (three time periods)
-    ├── methods.py           Methods diagnostic figures (checkerboard, SST maps)
-    └── temp_velocities.py   Temperature-velocity maps and histogram
-```
+Large NetCDF files must be accessible via the `ABSTEMP_DATA_DIR` environment
+variable (set to `/data` in the container) or placed in
+`code/src/abstemp/data/` for local use.

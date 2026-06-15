@@ -1,3 +1,4 @@
+import os
 import pathlib
 
 import numpy as np
@@ -8,6 +9,19 @@ from abstemp.data import (
     open_warmest_2095,
 )
 from abstemp import reg_calculations
+
+vector_figs = False
+
+
+def _nc_dir() -> pathlib.Path:
+    """Return the directory that holds large NetCDF files.
+
+    Respects the ``ABSTEMP_DATA_DIR`` environment variable so the same code
+    works both inside a Code Ocean capsule (``/data``) and in a local
+    development environment (package data directory).
+    """
+    env = os.environ.get("ABSTEMP_DATA_DIR")
+    return pathlib.Path(env) if env else pathlib.Path(__file__).parent / "data"
 
 def open_mintmat_ds() -> xr.Dataset:
     """Open the mintmat connectivity/SST dataset bundled with the package.
@@ -21,7 +35,7 @@ def open_mintmat_ds() -> xr.Dataset:
         ``clm_max_sst``, ``clm_mon_sst``, ``longhurst_basins``, etc.).
     """
     return xr.open_dataset(
-        pathlib.Path(__file__).parent / "data/mintmat_2001-2009.nc",
+        _nc_dir() / "mintmat_2001-2009.nc",
         decode_timedelta=False,
     )
 
@@ -76,4 +90,4 @@ def open_longhurst() -> xr.Dataset:
         Dataset on a regular lat/lon grid with variables ``basins``,
         ``regions``, and ``biomes`` (integer province codes).
     """
-    return xr.open_dataset(pathlib.Path(__file__).parent / f"data/Longhurst_Regions_2007.nc")
+    return xr.open_dataset(_nc_dir() / "Longhurst_Regions_2007.nc")

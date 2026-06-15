@@ -1,13 +1,16 @@
-# Use Case 1 — bundled data (less downloads)
+# Code Ocean capsule / local podman compatible
 #
-# Build (from the project root):
-#   podman build -t abstemp .
+# Build (from project root):
+#   podman build -t abstemp -f environment/Dockerfile .
 #
-# Run (mount the data dir and figs output):
+# Run (locally with podman — mount your data dir and an output dir):
 #   podman run --rm \
-#     -v "$(pwd)/src/abstemp/data:/app/src/abstemp/data:ro" \
-#     -v "$(pwd)/figs:/app/figs" \
+#     -v "$(pwd)/code/src/abstemp/data:/data:ro" \
+#     -v "$(pwd)/figs:/results" \
 #     abstemp
+#
+# In Code Ocean: /data is mounted read-only with input data,
+#                /results is mounted writable for output.
 
 FROM debian:bookworm-slim
 
@@ -21,20 +24,28 @@ ENV PIXI_HOME=/usr/local/pixi
 RUN curl -fsSL https://pixi.sh/install.sh | PIXI_HOME=/usr/local/pixi sh
 ENV PATH="/usr/local/pixi/bin:$PATH"
 
+# Store pixi project environments outside /code so they survive Code Ocean's
+# /code volume mount at runtime.
+RUN mkdir -p /root/.config/pixi \
+ && printf 'detached-environments = "/opt/pixi-envs"\n' \
+    > /root/.config/pixi/config.toml
+
 # ── Project ───────────────────────────────────────────────────────────────────
-WORKDIR /app
-COPY . .
+COPY code/ /code/
 
-# Figure output directory
-RUN mkdir -p figs
+# Code Ocean standard directories
+RUN mkdir -p /data /results
 
-# Install the pixi environment (reproducible via pixi.lock)
-RUN pixi install --locked
+# Install the pixi environment into /opt/pixi-envs/ (reproducible via pixi.lock)
+RUN cd /code && pixi install --locked
 
 # ── Runtime ───────────────────────────────────────────────────────────────────
-# Use the non-interactive matplotlib backend (no display needed in the container)
+# Non-interactive matplotlib backend (no display needed)
 ENV MPLBACKEND=Agg
 # Disable Python output buffering so progress is visible in container logs
 ENV PYTHONUNBUFFERED=1
+# Large NetCDF files are provided via /data mount (Code Ocean) or a local bind mount
+ENV ABSTEMP_DATA_DIR=/data
 
-#ENTRYPOINT ["pixi", "run", "python", "docker/run_figures.py"]
+WORKDIR /code
+ENTRYPOINT ["/bin/bash", "/code/run"]

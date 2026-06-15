@@ -9,6 +9,7 @@ import numpy as np
 import matplotlib.pyplot as plt
 
 import abstemp
+from abstemp import data, vector_figs
 from abstemp.figure_scripts.figpref import lon, lat
 from abstemp.reg_calculations import regvec_to_arr
 
@@ -31,7 +32,8 @@ def checkerboard() -> None:
     mp = projmap.Map()
     mp.pcolor(lons, lats, check, cmap="gray", vmin=-1)
     mp.nice()
-    plt.savefig("figs/checkerboard.pdf", dpi=600, bbox_inches="tight")
+    if vector_figs:
+        plt.savefig("figs/checkerboard.pdf", dpi=600, bbox_inches="tight")
     plt.savefig("figs/checkerboard.png", dpi=600, bbox_inches="tight")
 
 
@@ -52,9 +54,12 @@ def sst_maps() -> None:
     -------
     None
     """
-    gl = abstemp.open_mintmat_ds()
-    maxsst = regvec_to_arr(gl.abs_max_sst)
-    minsst = regvec_to_arr(gl.abs_min_sst)
+    ds = data.open_warmest_2019()
+
+    maxsst = ds.maxmon.values
+    minsst = ds.minmon.values
+    lon = ds.lon.values
+    lat = ds.lat.values
 
     cmap_name = "Spectral_r"
     plt.clf()
@@ -86,5 +91,6 @@ def sst_maps() -> None:
     cax2 = mp.fig.add_axes([cb_x, pos2.y0, cb_w, pos2.height])
     cb2 = mp.fig.colorbar(im_range, cax=cax2, orientation="vertical")
     cb2.ax.set_ylabel("Max $-$ Min SST (°C)")
-    plt.savefig("figs/ostia_sst.pdf", dpi=600, bbox_inches="tight")
+    if vector_figs:
+        plt.savefig("figs/ostia_sst.pdf", dpi=600, bbox_inches="tight")
     plt.savefig("figs/ostia_sst.png", dpi=600, bbox_inches="tight")
