@@ -1,12 +1,10 @@
 # Absolute Temperature — Reproducible Code Capsule
 
-This capsule reproduces all manuscript figures for the study on how rising
-sea-surface temperatures affect the biological accessibility of cooler ocean
-regions via ocean connectivity.
+This capsule reproduces data processing and figure generation presented by the manuscript Extreme temperatures, __Connectivity, and Phytoplankton Resilience in a Warming Ocean__.
 
 ---
 
-## Reproducing the figures
+## Running the analysis and reproducing the figures
 
 Click **Reproducible Run** at the top of this capsule.  All six manuscript
 figures will be written to the **Results** panel (usually within 10–15
